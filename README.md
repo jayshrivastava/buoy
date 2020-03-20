@@ -7,6 +7,8 @@ A simplified implementation of a distributed key value store which uses the Raft
 - The Raft [paper](https://raft.github.io/raft.pdf)
 
 ## Development  
+Download Deps
+`go mod download`  
 
 Generate Protocol Bufffer    
 `protoc -I proto/ proto/groupchat.proto --go_out=plugins=grpc:proto`
