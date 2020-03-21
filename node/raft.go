@@ -90,14 +90,14 @@ func (node *Node) beginElection() {
 
 	result, newTerm, _, _ := node.client.requestVotes(currentTerm, node.nodeId, currentLastLogIndex, currentLastLogTerm)
 	node.mu.Lock()
-	defer node.mu.Unlock()
 	// Another node was elected leader
 	if node.state != CANDIDATE {
 		return
 	}
+	node.mu.Unlock()
 
 	switch result {
-	case TERM_OUT_OF_DATE:
+	case RV_TERM_OUT_OF_DATE:
 		node.becomeFollower(newTerm)
 		return
 	case MAJORITY:
@@ -109,17 +109,37 @@ func (node *Node) beginElection() {
 	return
 }
 
-// Guarenteed that lock is acquired as this point
 func (node *Node) becomeFollower(newTerm int32) {
+	node.mu.Lock()
 	node.state = FOLLOWER
 	node.term = newTerm
+	node.mu.Unlock()
 
 	go node.runElectionTimer()
 }
 
-// Guarenteed that lock is acquired as this point
 func (node *Node) becomeLeader() {
+	node.mu.Lock()
+	nodeId := node.nodeId
+	node.state = LEADER
+	savedCurrentTerm := node.term
+	node.mu.Unlock()
 
+	go func() {
+		timer := time.NewTimer(HEARTBEAT_INTERVAL * time.Millisecond)
+		defer timer.Stop()
+		for {
+			<- timer.C
+			result, term := node.client.appendEntries(savedCurrentTerm, nodeId, 0,0,0, make(map[int32]string))
+			switch result {
+			case AE_TERM_OUT_OF_DATE:
+				node.becomeFollower(term)
+				return
+			case SUCCESS:
+			case FAILIURE:
+			}
+		}
+	}()
 }
 
 /* CONSTANTS */
@@ -136,6 +156,7 @@ const (
 // Timers
 const MIN_ELECTION_TIMEOUT = 150
 const MAX_ELECTION_TIMEOUT = 300
+const HEARTBEAT_INTERVAL = 50
 
 type TIMEREVENT int
 
