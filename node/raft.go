@@ -88,7 +88,7 @@ func (node *Node) beginElection() {
 	currentLastLogIndex := node.lastLogIndex
 	currentLastLogTerm := node.lastLogTerm
 
-	result, newTerm, _, _ := node.client.requestVotes(currentTerm, node.nodeId, currentLastLogIndex, currentLastLogTerm)
+	result, newTerm := node.client.requestVotes(currentTerm, node.nodeId, currentLastLogIndex, currentLastLogTerm)
 	node.mu.Lock()
 	// Another node was elected leader
 	if node.state != CANDIDATE {
@@ -129,8 +129,8 @@ func (node *Node) becomeLeader() {
 		timer := time.NewTimer(HEARTBEAT_INTERVAL * time.Millisecond)
 		defer timer.Stop()
 		for {
-			<- timer.C
-			result, term := node.client.appendEntries(savedCurrentTerm, nodeId, 0,0,0, make(map[int32]string))
+			<-timer.C
+			result, term := node.client.appendEntries(savedCurrentTerm, nodeId, 0, 0, 0, make(map[int32]string))
 			switch result {
 			case AE_TERM_OUT_OF_DATE:
 				node.becomeFollower(term)
