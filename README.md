@@ -11,7 +11,7 @@ Download Deps
 `go mod download`  
 
 Generate Protocol Bufffer    
-`protoc -I proto/ proto/groupchat.proto --go_out=plugins=grpc:proto`
+`protoc -I rpc/ rpc/raft.proto --go_out=plugins=grpc:rpc`
 
 Formatting  
 `go fmt ./...`

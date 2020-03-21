@@ -3,19 +3,19 @@ syntax = "proto3";
 package rpc;
 
 service Raft {
- rpc Vote(VoteRequest) returns (VoteResponse) {}
+ rpc RequestVotes(RequestVotesRequest) returns (RequestVotesResponse) {}
  rpc AppendEntries(AppendEntriesRequest) returns (AppendEntriesResponse) {}
 }
 
-message VoteRequest {
+message RequestVotesRequest {
     int32 Term = 1;
     int32 RaftServerId = 2;
     int32 LastLogIndex = 3;
     int32 LastLogTerm = 4;
 }
 
-message VoteResponse {
-    int32 NewTerm = 1;
+message RequestVotesResponse {
+    int32 Term = 1;
     bool VoteGranted = 2;
 }
 
