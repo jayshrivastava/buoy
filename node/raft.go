@@ -1,16 +1,16 @@
 package node
 
 import (
+	"google.golang.org/grpc"
 	"math/rand"
 	"sync"
 	"time"
+	"fmt"
 )
 
-type Node struct {
+type raftNode struct {
 	// Identifier of this Server
 	nodeId int32
-	// Identifiers all other Servers in the cluster
-	peerNodeIds int32
 	// Node state
 	state STATE
 	// Current Term
@@ -23,10 +23,10 @@ type Node struct {
 	timerEvent chan TIMEREVENT
 	// Lock - applies to term
 	mu sync.Mutex
-	// RPC receiver
-	receiver receiver
 	// RPC Client
-	client client
+	sender RaftSender
+	// logger
+	l Logger
 }
 
 type RaftNode interface {
@@ -35,13 +35,52 @@ type RaftNode interface {
 	generateElectionTimeout()
 	becomeFollower(newTerm int32)
 	becomeLeader()
+	appendToLog()
+	Run()
 }
 
-func (node *Node) generateElectionTimeout() time.Duration {
+func RunRaftNode(nodeId int32, port string, iport string, iports []string, wg *sync.WaitGroup, state STATE) {
+	defer wg.Done()
+
+	node := raftNode{
+		nodeId: nodeId,
+		state: state,
+		term: 0,
+		lastLogIndex: 0,
+		lastLogTerm: 0,
+		timerEvent: make(chan TIMEREVENT),
+		mu: sync.Mutex{},
+		// Sender not implemented until receivers are running
+		l: CreateLogger(nodeId),
+	}
+
+	go RunApiServer(port, &node)
+	go RunRaftReceiver(iport, &node)
+
+	rpcClients := []RaftClient{}
+	for _, iport := range(iports) {
+		conn, _ := grpc.Dial(fmt.Sprintf("localhost:%s", iport), grpc.WithInsecure())
+		rpcClients = append(rpcClients, NewRaftClient(conn))
+	}
+	node.sender = CreateRaftSender(rpcClients)
+
+	node.Run()
+	
+}
+
+func (node *raftNode) Run() {
+	for {
+		time.Sleep(3*time.Second)
+
+		node.l.Log("running")
+	}
+}
+
+func (node *raftNode) generateElectionTimeout() time.Duration {
 	return time.Duration(MIN_ELECTION_TIMEOUT+rand.Intn(MAX_ELECTION_TIMEOUT-MIN_ELECTION_TIMEOUT)) * time.Millisecond
 }
 
-func (node *Node) runElectionTimer() {
+func (node *raftNode) runElectionTimer() {
 	timeout := node.generateElectionTimeout()
 	node.mu.Lock()
 	termStarted := node.term
@@ -80,7 +119,7 @@ func (node *Node) runElectionTimer() {
 }
 
 // Guarenteed to be called when runElectionTimer is not running
-func (node *Node) beginElection() {
+func (node *raftNode) beginElection() {
 	node.state = CANDIDATE
 	node.term += 1
 
@@ -88,20 +127,20 @@ func (node *Node) beginElection() {
 	currentLastLogIndex := node.lastLogIndex
 	currentLastLogTerm := node.lastLogTerm
 
-	result, newTerm := node.client.requestVotes(currentTerm, node.nodeId, currentLastLogIndex, currentLastLogTerm)
+	result, newTerm := node.sender.requestVotes(currentTerm, node.nodeId, currentLastLogIndex, currentLastLogTerm)
 	node.mu.Lock()
 	// Another node was elected leader
 	if node.state != CANDIDATE {
 		return
 	}
-	node.mu.Unlock()
-
 	switch result {
 	case RV_TERM_OUT_OF_DATE:
 		node.becomeFollower(newTerm)
+		node.mu.Unlock()
 		return
 	case MAJORITY:
 		node.becomeLeader()
+		node.mu.Unlock()
 		return
 	case SPLIT:
 	case LOST:
@@ -109,31 +148,31 @@ func (node *Node) beginElection() {
 	return
 }
 
-func (node *Node) becomeFollower(newTerm int32) {
-	node.mu.Lock()
+// LOCK MUST BE ACQUIRED
+func (node *raftNode) becomeFollower(newTerm int32) {
 	node.state = FOLLOWER
 	node.term = newTerm
-	node.mu.Unlock()
 
 	go node.runElectionTimer()
 }
 
-func (node *Node) becomeLeader() {
-	node.mu.Lock()
+// LOCK MUST BE ACQUIRED
+func (node *raftNode) becomeLeader() {
 	nodeId := node.nodeId
 	node.state = LEADER
 	savedCurrentTerm := node.term
-	node.mu.Unlock()
 
 	go func() {
 		timer := time.NewTimer(HEARTBEAT_INTERVAL * time.Millisecond)
 		defer timer.Stop()
 		for {
 			<-timer.C
-			result, term := node.client.appendEntries(savedCurrentTerm, nodeId, 0, 0, 0, make(map[int32]string))
+			result, term := node.sender.appendEntries(savedCurrentTerm, nodeId, 0, 0, 0, make(map[int32]string))
 			switch result {
 			case AE_TERM_OUT_OF_DATE:
+				node.mu.Lock()
 				node.becomeFollower(term)
+				node.mu.Unlock()
 				return
 			case SUCCESS:
 			case FAILIURE:
@@ -141,6 +180,8 @@ func (node *Node) becomeLeader() {
 		}
 	}()
 }
+
+func (node *raftNode) appendToLog(){}
 
 /* CONSTANTS */
 

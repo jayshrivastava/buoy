@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package rpc;
+package node;
 
 service Raft {
  rpc RequestVotes(RequestVotesRequest) returns (RequestVotesResponse) {}
