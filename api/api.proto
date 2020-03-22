@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package api;
+
+service Api {
+    rpc AddEntry(AddEntryRequest) returns (AddEntryResponse) {}
+}
+
+message AddEntryRequest {
+    int32 Key = 1;
+    string Value = 2;
+}
+
+message AddEntryResponse {
+    bool Success = 1;
+}
