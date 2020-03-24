@@ -9,7 +9,7 @@ service Raft {
 
 message RequestVotesRequest {
     int32 Term = 1;
-    int32 RaftServerId = 2;
+    int32 RaftNodeId = 2;
     int32 LastLogIndex = 3;
     int32 LastLogTerm = 4;
 }
