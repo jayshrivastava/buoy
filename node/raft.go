@@ -63,17 +63,16 @@ type RaftNode interface {
 	Run()
 }
 
-func RunRaftNode(id int32, port string, iport string, iports map[int32]string, wg *sync.WaitGroup, state STATE) {
-	defer wg.Done()
+func RunRaftNode(cfg NodeConfig) {
 
 	externalNodeIds := []int32{}
-	for externalNodeId, _ := range iports {
+	for externalNodeId, _ := range cfg.PeerNodeHosts {
 		externalNodeIds = append(externalNodeIds, externalNodeId)
 	}
 	node := raftNode{
-		id:              id,
+		id:              cfg.Id,
 		externalNodeIds: externalNodeIds,
-		state:           state,
+		state:           FOLLOWER,
 		term:            0,
 		votedFor:        -1,
 		commitIndex:     0,
@@ -85,17 +84,17 @@ func RunRaftNode(id int32, port string, iport string, iports map[int32]string, w
 		te:              NONE,
 		mu:              sync.Mutex{},
 		// Sender not implemented until receivers are running
-		l: CreateLogger(id),
+		l: CreateLogger(cfg.Id),
 	}
 	for _, nodeId := range node.externalNodeIds {
 		node.nextIndex[nodeId] = 0
 		node.matchIndex[nodeId] = 0
 	}
 
-	go RunApiServer(port, &node)
-	go RunRaftReceiver(iport, &node)
+	go RunApiServer(cfg.ExternalOutbound, &node)
+	go RunRaftReceiver(cfg.InternalOutbound, &node)
 
-	node.sender = CreateRaftSender(iports, &node)
+	node.sender = CreateRaftSender(cfg.PeerNodeHosts, &node)
 
 	wg2 := sync.WaitGroup{}
 	wg2.Add(1)

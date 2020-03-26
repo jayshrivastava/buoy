@@ -19,8 +19,8 @@ type yml struct {
 }
 
 type configuration struct {
-	node   []NodeConfig
-	client ClientConfig
+	nodesCfg  []NodeConfig
+	clientCfg ClientConfig
 }
 
 func (c *yml) parse() error {
@@ -63,5 +63,5 @@ func CreateConfig() (*configuration, error) {
 		clientConfig.NodeHosts[int32(id)] = fmt.Sprintf("%s:%s", node.Host, node.External)
 	}
 
-	return &configuration{node: nodeConfigs, client: clientConfig}, nil
+	return &configuration{nodesCfg: nodeConfigs, clientCfg: clientConfig}, nil
 }

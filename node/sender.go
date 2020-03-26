@@ -14,10 +14,10 @@ type sender struct {
 	node       *raftNode
 }
 
-func CreateRaftSender(iports map[int32]string, node *raftNode) RaftSender {
+func CreateRaftSender(hosts map[int32]string, node *raftNode) RaftSender {
 	rpcClients := map[int32]RaftClient{}
-	for externalNodeId, iport := range iports {
-		conn, _ := grpc.Dial(fmt.Sprintf("127.0.0.1:%s", iport), grpc.WithInsecure())
+	for externalNodeId, host := range hosts {
+		conn, _ := grpc.Dial(host, grpc.WithInsecure())
 		rpcClients[externalNodeId] = NewRaftClient(conn)
 	}
 	return &sender{rpcClients: rpcClients, node: node}
