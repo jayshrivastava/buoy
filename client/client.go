@@ -12,6 +12,10 @@ import (
 	"sync"
 )
 
+type ClientConfig struct {
+	NodeHosts map[int32]string
+}
+
 type buoyClient struct {
 	hosts []string
 }

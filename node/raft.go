@@ -7,6 +7,13 @@ import (
 	"time"
 )
 
+type NodeConfig struct {
+	Id               int32
+	InternalOutbound string
+	ExternalOutbound string
+	PeerNodeHosts    map[int32]string
+}
+
 type logEntry struct {
 	key   int32
 	value string
