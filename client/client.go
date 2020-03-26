@@ -17,7 +17,7 @@ type ClientConfig struct {
 }
 
 type buoyClient struct {
-	hosts []string
+	hosts map[int32]string
 }
 
 type BuoyClient interface {
@@ -25,13 +25,10 @@ type BuoyClient interface {
 	Run()
 }
 
-func CreateBuoyClient(ports []string) (BuoyClient, error) {
+func CreateBuoyClient(cfg ClientConfig) (BuoyClient, error) {
 
-	for i, port := range ports {
-		ports[i] = fmt.Sprintf("127.0.0.1:%s", port)
-	}
 	bc := buoyClient{
-		hosts: ports,
+		hosts: cfg.NodeHosts,
 	}
 
 	return &bc, nil

@@ -61,6 +61,12 @@ func testIPorts(iports []string) bool {
 
 func main() {
 
+	config, err := CreateConfig()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
 	iports := flag.String("iports", "", "CSV values of ports for inter node communication")
 	ports := flag.String("ports", "", "CSV values of ports for clients to communicate with the cluster ")
 	runAsClient := flag.Bool("client", false, "Run as client if flag is present, else run cluster")
@@ -104,17 +110,8 @@ func main() {
 		wg.Wait()
 
 	} else {
-		if *ports == "" {
-			logError(fmt.Errorf("No node addresses provided for client"))
-			return
-		}
 
-		ports := strings.Split(*ports, ",")
-		if !testPorts(ports) {
-			return
-		} // terminate if ports are invalid
-
-		client, err := client.CreateBuoyClient(ports)
+		client, err := client.CreateBuoyClient(config.client)
 		if err != nil {
 			logError(err)
 			return
