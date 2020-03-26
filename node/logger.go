@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+func formatTime(t time.Time) string {
+	return t.In(time.Local).Format("03:04:05.000000")
+}
+
 type logger struct {
 	nodeId int32
 	stream chan string
