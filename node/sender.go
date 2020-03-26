@@ -1,6 +1,7 @@
 package node
 
 import (
+	"google.golang.org/grpc"
 	"context"
 	"fmt"
 	"sync"
@@ -13,7 +14,12 @@ type sender struct {
 	node       *raftNode
 }
 
-func CreateRaftSender(rpcClients map[int32]RaftClient, node *raftNode) RaftSender {
+func CreateRaftSender(iports map[int32]string, node *raftNode) RaftSender {
+	rpcClients := map[int32]RaftClient{}
+	for externalNodeId, iport := range iports {
+		conn, _ := grpc.Dial(fmt.Sprintf("127.0.0.1:%s", iport), grpc.WithInsecure())
+		rpcClients[externalNodeId] = NewRaftClient(conn)
+	}
 	return &sender{rpcClients: rpcClients, node: node}
 }
 

@@ -2,7 +2,6 @@ package node
 
 import (
 	"fmt"
-	"google.golang.org/grpc"
 	"math/rand"
 	"sync"
 	"time"
@@ -89,12 +88,7 @@ func RunRaftNode(id int32, port string, iport string, iports map[int32]string, w
 	go RunApiServer(port, &node)
 	go RunRaftReceiver(iport, &node)
 
-	rpcClients := map[int32]RaftClient{}
-	for externalNodeId, iport := range iports {
-		conn, _ := grpc.Dial(fmt.Sprintf("127.0.0.1:%s", iport), grpc.WithInsecure())
-		rpcClients[externalNodeId] = NewRaftClient(conn)
-	}
-	node.sender = CreateRaftSender(rpcClients, &node)
+	node.sender = CreateRaftSender(iports, &node)
 
 	wg2 := sync.WaitGroup{}
 	wg2.Add(1)
@@ -261,9 +255,9 @@ func (t STATE) String() string {
 }
 
 // Timers
-const MIN_ELECTION_TIMEOUT = 300
-const MAX_ELECTION_TIMEOUT = 500
-const HEARTBEAT_INTERVAL = 30
+const MIN_ELECTION_TIMEOUT = 150
+const MAX_ELECTION_TIMEOUT = 300
+const HEARTBEAT_INTERVAL = 50
 
 type TIMEREVENT int
 
