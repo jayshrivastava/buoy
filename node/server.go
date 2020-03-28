@@ -27,8 +27,9 @@ func RunApiServer(port string, node *raftNode) {
 }
 
 func (s *apiServer) AddEntry(context context.Context, req *api.AddEntryRequest) (*api.AddEntryResponse, error) {
-	s.node.mu.Lock()
-	defer s.node.mu.Unlock()
+	node := s.node
+	node.mu.Lock()
+	defer node.mu.Unlock()
 	res := api.AddEntryResponse{}
 
 	if s.node.state != LEADER {
@@ -37,9 +38,28 @@ func (s *apiServer) AddEntry(context context.Context, req *api.AddEntryRequest) 
 	}
 
 	if req.Key == 0 || req.Value == "" {
-		s.node.l.Log(s.node.id, "Recieved ping from client")
+		node.l.Log(node.id, "Recieved ping from client")
 	} else {
-		s.node.l.Log(s.node.id, fmt.Sprintf("Got request %d=%s from client", req.Key, req.Value))
+		node.l.Log(node.id, fmt.Sprintf("Got request %d=%s from client", req.Key, req.Value))
+
+		node.dataMu.Lock()
+
+		node.AddLogEntry(req.Key, req.Value, node.term)
+
+		for _, peerId := range node.externalNodeIds {
+			returnMsg, term := node.sender.appendEntries(peerId, node.term, node.id, int32(len(node.log)-2), node.log[len(node.log)-2].term, node.lastApplied, req.Key, req.Value)
+			if returnMsg == AE_TERM_OUT_OF_DATE {
+				node.dataMu.Unlock()
+				node.becomeFollower(term)
+				res.Success = false
+				return &res, nil
+			} else {
+				node.nextIndex[peerId] = int32(len(node.log) - 1)
+				node.matchIndex[peerId] = int32(len(node.log) - 1)
+			}
+		}
+		node.dataMu.Unlock()
+
 	}
 	res.Success = true
 	return &res, nil

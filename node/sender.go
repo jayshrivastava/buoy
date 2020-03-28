@@ -25,7 +25,8 @@ func CreateRaftSender(hosts map[int32]string, node *raftNode) RaftSender {
 
 type RaftSender interface {
 	requestVotes(term int32, raftNodeId int32, lastLogIndex int32, lastLogTerm int32) (REQUEST_VOTES_RETURN_TYPE, int32)
-	appendEntries(term int32, leaderId int32, prevLogIndex int32, prevLogTerm int32, leaderCommitIndex int32, entries map[int32]string) (APPEND_ENTRIES_RETURN_TYPE, int32)
+	heartbeat(term int32, leaderId int32) (APPEND_ENTRIES_RETURN_TYPE, int32)
+	appendEntries(to int32, term int32, leaderId int32, prevLogIndex int32, prevLogTerm int32, leaderCommitIndex int32, key int32, value string) (APPEND_ENTRIES_RETURN_TYPE, int32)
 }
 
 func (client *sender) requestVotes(term int32, raftNodeId int32, lastLogIndex int32, lastLogTerm int32) (REQUEST_VOTES_RETURN_TYPE, int32) {
@@ -88,7 +89,7 @@ func (client *sender) requestVotes(term int32, raftNodeId int32, lastLogIndex in
 	return LOST, maxTermSeen
 }
 
-func (client *sender) appendEntries(term int32, leaderId int32, prevLogIndex int32, prevLogTerm int32, leaderCommitIndex int32, entries map[int32]string) (APPEND_ENTRIES_RETURN_TYPE, int32) {
+func (client *sender) heartbeat(term int32, leaderId int32) (APPEND_ENTRIES_RETURN_TYPE, int32) {
 
 	maxTermSeen := term
 	responses := []*AppendEntriesResponse{}
@@ -99,10 +100,11 @@ func (client *sender) appendEntries(term int32, leaderId int32, prevLogIndex int
 		req := AppendEntriesRequest{
 			Term:              term,
 			LeaderId:          leaderId,
-			PrevLogIndex:      prevLogIndex,
-			PrevLogTerm:       prevLogTerm,
-			LeaderCommitIndex: leaderCommitIndex,
-			Entries:           entries,
+			PrevLogIndex:      0,
+			PrevLogTerm:       0,
+			LeaderCommitIndex: 0,
+			Key:               0,
+			Value:             "",
 		}
 		wg.Add(1)
 
@@ -126,6 +128,33 @@ func (client *sender) appendEntries(term int32, leaderId int32, prevLogIndex int
 	}
 
 	if maxTermSeen > term {
+		return AE_TERM_OUT_OF_DATE, 1
+	}
+
+	return SUCCESS, term
+}
+
+func (client *sender) appendEntries(to int32, term int32, leaderId int32, prevLogIndex int32, prevLogTerm int32, leaderCommitIndex int32, key int32, value string) (APPEND_ENTRIES_RETURN_TYPE, int32) {
+
+	nodeClient := client.rpcClients[to]
+	req := AppendEntriesRequest{
+		Term:              term,
+		LeaderId:          leaderId,
+		PrevLogIndex:      prevLogIndex,
+		PrevLogTerm:       prevLogTerm,
+		LeaderCommitIndex: leaderCommitIndex,
+		Key:               key,
+		Value:             value,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	response, err := nodeClient.AppendEntries(ctx, &req)
+	if err != nil {
+		client.node.l.Log(leaderId, err.Error())
+	}
+
+	if response.Term > term {
 		return AE_TERM_OUT_OF_DATE, 1
 	}
 

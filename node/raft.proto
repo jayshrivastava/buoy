@@ -25,7 +25,8 @@ message AppendEntriesRequest {
     int32 PrevLogIndex = 3;
     int32 PrevLogTerm = 4;
     int32 LeaderCommitIndex = 6;
-    map<int32, string> Entries = 7;
+    int32 Key = 7;
+    string Value = 8;
 }
 
 message AppendEntriesResponse {

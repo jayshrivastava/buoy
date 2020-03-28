@@ -46,11 +46,13 @@ type raftNode struct {
 	// Key value store
 	kv map[int32]string
 	// Log
-	log []logEntry
+	log []*logEntry
 	// Event to reset the timer or indivate timer expiry
 	te TIMEREVENT
-	// Lock - applies to term
+	// Lock - applies everything other than locks below this one
 	mu sync.Mutex
+	// Lock - protects commitIndex, lastApplied, log, and kv, nextIndex, and matchIndex
+	dataMu sync.RWMutex
 	// RPC Client
 	sender RaftSender
 	// logger
@@ -84,9 +86,10 @@ func RunRaftNode(cfg NodeConfig, l NodeLogger) {
 		nextIndex:       map[int32]int32{},
 		matchIndex:      map[int32]int32{},
 		kv:              map[int32]string{},
-		log:             []logEntry{logEntry{key: 0, value: "", term: 0}},
+		log:             []*logEntry{&logEntry{key: 0, value: "", term: 0}},
 		te:              NONE,
 		mu:              sync.Mutex{},
+		dataMu:          sync.RWMutex{},
 		// Sender not implemented until receivers are running
 		l: l,
 	}
@@ -107,6 +110,12 @@ func RunRaftNode(cfg NodeConfig, l NodeLogger) {
 	node.l.Log(node.id, "Launched")
 	node.becomeFollower(0)
 	wg2.Wait()
+}
+
+// lock must be acquired here
+func (node *raftNode) AddLogEntry(key int32, value string, term int32) {
+	node.l.Log(node.id, fmt.Sprintf("Appending log entry k:%d v:%s term:%d", key, value, term))
+	node.log = append(node.log, &logEntry{key: key, value: value, term: term})
 }
 
 func (node *raftNode) Run() {
@@ -215,12 +224,18 @@ func (node *raftNode) becomeFollower(newTerm int32) {
 
 // LOCK MUST BE ACQUIRED
 func (node *raftNode) becomeLeader() {
-	node.l.Log(node.id, "Became LEADER")
 	node.mu.Lock()
+	node.l.Log(node.id, fmt.Sprintf("Became LEADER with term %d", node.term))
 	node.state = LEADER
 	node.votedFor = -1
 	term := node.term
 	leaderId := node.id
+	node.dataMu.RLock()
+	for _, nodeId := range node.externalNodeIds {
+		node.nextIndex[nodeId] = int32(len(node.log))
+		node.matchIndex[nodeId] = 0
+	}
+	node.dataMu.RUnlock()
 	node.mu.Unlock()
 
 	go func() {
@@ -229,8 +244,8 @@ func (node *raftNode) becomeLeader() {
 				return
 			}
 
-			node.l.Log(node.id, "Sending append entries")
-			result, term := node.sender.appendEntries(term, leaderId, 0, 0, 0, make(map[int32]string))
+			node.l.Log(node.id, "Sending heartbeat")
+			result, term := node.sender.heartbeat(term, leaderId)
 
 			switch result {
 			case AE_TERM_OUT_OF_DATE:

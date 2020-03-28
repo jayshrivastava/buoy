@@ -59,24 +59,56 @@ func (receiver *raftReceiver) AppendEntries(ctx context.Context, req *AppendEntr
 	term := node.term
 	node.mu.Unlock()
 
-	node.l.Log(node.id, fmt.Sprintf("Rec. appendEntries from %d term %d", req.LeaderId, req.Term))
+	node.l.Log(node.id, fmt.Sprintf("Rec. appendEntries from %d term %d key %d value %s", req.LeaderId, req.Term, req.Key, req.Value))
 
 	res := AppendEntriesResponse{}
 
-	// heartbeat
-	if len(req.Entries) == 0 {
-		if req.Term >= term {
-			if node.getState() != FOLLOWER {
-				node.becomeFollower(req.Term)
-			} else {
-				node.l.Log(node.id, "setting timer to be reset")
-				node.resetTimerEvent(req.Term)
-			}
-			res.Term = term
-			res.Success = true
-			return &res, nil
+	if req.Term < node.term {
+		res.Term = node.term
+		res.Success = false
+		return &res, nil
+	}
+
+	if req.Term >= term {
+		if node.getState() != FOLLOWER {
+			node.becomeFollower(req.Term)
+		} else {
+			node.l.Log(node.id, "setting timer to be reset")
+			node.resetTimerEvent(req.Term)
 		}
 	}
+
+	// Just return if heartbeat
+	if req.Key == 0 {
+		res.Term = term
+		res.Success = true
+		return &res, nil
+	}
+
+	node.dataMu.Lock()
+	// 	Reply false if log doesn’t contain an entry at prevLogIndex whose term matches prevLogTerm (§5.3)
+	if req.PrevLogIndex >= int32(len(node.log)) || node.log[req.PrevLogIndex].term != req.PrevLogTerm {
+		res.Term = term
+		res.Success = false
+		node.dataMu.Unlock()
+		return &res, nil
+	}
+
+	// If an existing entry conflicts with a new one (same index but different terms), delete the existing entry and all that follow it (§5.3)
+	// Here we can delete all after prevlogindex
+	node.log = node.log[req.PrevLogIndex:]
+
+	// Append any new entries not already in the log
+	node.AddLogEntry(req.Key, req.Value, req.Term)
+
+	// If leaderCommit > commitIndex, set commitIndex = min(leaderCommit, index of last new entry)
+	if int32(len(node.log))-1 > req.LeaderCommitIndex {
+		node.commitIndex = req.LeaderCommitIndex
+	} else {
+		node.commitIndex = int32(len(node.log)) - 1
+	}
+
+	node.dataMu.Unlock()
 
 	res.Term = term
 	res.Success = true
