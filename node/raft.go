@@ -14,7 +14,7 @@ type NodeConfig struct {
 	PeerNodeHosts    map[int32]string
 }
 
-type Logger interface {
+type NodeLogger interface {
 	Log(int32, string)
 }
 
@@ -54,7 +54,7 @@ type raftNode struct {
 	// RPC Client
 	sender RaftSender
 	// logger
-	l Logger
+	l NodeLogger
 }
 
 type RaftNode interface {
@@ -67,7 +67,7 @@ type RaftNode interface {
 	Run()
 }
 
-func RunRaftNode(cfg NodeConfig, l Logger) {
+func RunRaftNode(cfg NodeConfig, l NodeLogger) {
 
 	externalNodeIds := []int32{}
 	for externalNodeId, _ := range cfg.PeerNodeHosts {

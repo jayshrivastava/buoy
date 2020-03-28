@@ -37,9 +37,9 @@ func (s *apiServer) AddEntry(context context.Context, req *api.AddEntryRequest) 
 	}
 
 	if req.Key == 0 || req.Value == "" {
-		s.node.l.Log(s.node.id, "Client Ping")
+		s.node.l.Log(s.node.id, "Recieved ping from client")
 	} else {
-		s.node.l.Log(s.node.id, fmt.Sprintf("got request %d = %s", req.Key, req.Value))
+		s.node.l.Log(s.node.id, fmt.Sprintf("Got request %d=%s from client", req.Key, req.Value))
 	}
 	res.Success = true
 	return &res, nil

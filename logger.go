@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/jayshrivastava/buoy/node"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,14 +16,20 @@ type logger struct {
 	totalNodes int32
 	stream     chan string
 	terminated chan bool
+	enable     bool
 }
 
-func CreateLogger(totalNodes int32) node.Logger {
+func CreateLogger(totalNodes int32, enable bool) *logger {
 	logger := logger{
 		totalNodes: totalNodes,
 		stream:     make(chan string),
 		terminated: make(chan bool, 1),
+		enable:     enable,
 	}
+	if !logger.enable {
+		return &logger
+	}
+
 	go logger.listen()
 	go logger.terminationHandler()
 	logger.stream <- fmt.Sprintf("<style>%s</style", CSS)
@@ -56,6 +61,9 @@ func (l *logger) terminationHandler() {
 }
 
 func (l *logger) Log(id int32, message string) {
+	if !l.enable {
+		return
+	}
 
 	line := fmt.Sprintf("<tr><td>%s</td>", formatTime(time.Now()))
 	for i := int32(0); i < l.totalNodes; i++ {
@@ -65,6 +73,7 @@ func (l *logger) Log(id int32, message string) {
 			line = line + "<td></td>"
 		}
 	}
+
 	line = line + "</tr>"
 
 	l.stream <- line

@@ -36,6 +36,7 @@ func CreateBuoyClient(cfg ClientConfig) (BuoyClient, error) {
 
 func (bc *buoyClient) findLeader() (string, error) {
 
+	fmt.Println("Searching for leader")
 	type hcr struct {
 		host     string
 		client   api.ApiClient
@@ -87,13 +88,13 @@ func (bc *buoyClient) findLeader() (string, error) {
 	if leader == "" {
 		return leader, fmt.Errorf("Could not find leader")
 	}
+	fmt.Println("Found leader")
 	return leader, nil
 }
 
 func (bc *buoyClient) Run() {
 	host, err := bc.findLeader()
 	for err != nil {
-		fmt.Println("ASdfasfijasij")
 		host, err = bc.findLeader()
 	}
 	conn, _ := grpc.Dial(host, grpc.WithInsecure())
@@ -107,7 +108,6 @@ func (bc *buoyClient) Run() {
 			text = strings.TrimSuffix(text, "\n")
 
 			kv := strings.Split(text, "=")
-			fmt.Println(strconv.Atoi(kv[0]))
 			if i, err := strconv.Atoi(kv[0]); err == nil {
 				req := api.AddEntryRequest{
 					Key:   int32(i),
@@ -115,13 +115,15 @@ func (bc *buoyClient) Run() {
 				}
 				res, err := client.AddEntry(context.Background(), &req)
 				if err != nil {
-					fmt.Println(err)
+					fmt.Println(err.Error())
+					host, err = bc.findLeader()
+					for err != nil {
+						host, err = bc.findLeader()
+					}
 				} else {
-					fmt.Println(res)
+					fmt.Println("Response status: ", res.Success)
 				}
 			}
-
-			fmt.Println("text")
 		}
 	}
 }

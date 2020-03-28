@@ -11,6 +11,8 @@ import (
 func main() {
 
 	runAsClient := flag.Bool("client", false, "Run as client if flag is present, else run cluster")
+	debug := flag.Bool("debug", false, "Output to log.html if enabled")
+
 	flag.Parse()
 
 	config, err := CreateConfig()
@@ -19,9 +21,8 @@ func main() {
 		return
 	}
 
-	logger := CreateLogger(int32(len(config.nodesCfg)))
-
 	if !*runAsClient {
+		logger := CreateLogger(int32(len(config.nodesCfg)), *debug)
 
 		wg := sync.WaitGroup{}
 		for _, cfg := range config.nodesCfg {
