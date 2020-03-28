@@ -15,7 +15,7 @@ type apiServer struct {
 
 func RunApiServer(port string, node *raftNode) {
 
-	lis, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%s", port))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
 		fmt.Printf("Could not start api server on port %s\n", port)
 		return
@@ -37,9 +37,9 @@ func (s *apiServer) AddEntry(context context.Context, req *api.AddEntryRequest) 
 	}
 
 	if req.Key == 0 || req.Value == "" {
-		s.node.l.Log("Client Ping")
+		s.node.l.Log(s.node.id, "Client Ping")
 	} else {
-		s.node.l.Log(fmt.Sprintf("got request %d = %s", req.Key, req.Value))
+		s.node.l.Log(s.node.id, fmt.Sprintf("got request %d = %s", req.Key, req.Value))
 	}
 	res.Success = true
 	return &res, nil

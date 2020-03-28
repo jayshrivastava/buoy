@@ -10,9 +10,9 @@ cluster:
   - internal: '3002'
     external: '5002'
     host: 127.0.0.1
-  - internal: '3003'
-    external: '5003'
-    host: 127.0.0.1
-  - internal: '3004'
-    external: '5004'
-    host: 127.0.0.1
+  # - internal: '3003'
+  #   external: '5003'
+  #   host: 127.0.0.1
+  # - internal: '3004'
+  #   external: '5004'
+  #   host: 127.0.0.1

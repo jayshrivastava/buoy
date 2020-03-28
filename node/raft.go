@@ -14,6 +14,10 @@ type NodeConfig struct {
 	PeerNodeHosts    map[int32]string
 }
 
+type Logger interface {
+	Log(int32, string)
+}
+
 type logEntry struct {
 	key   int32
 	value string
@@ -63,7 +67,7 @@ type RaftNode interface {
 	Run()
 }
 
-func RunRaftNode(cfg NodeConfig) {
+func RunRaftNode(cfg NodeConfig, l Logger) {
 
 	externalNodeIds := []int32{}
 	for externalNodeId, _ := range cfg.PeerNodeHosts {
@@ -84,7 +88,7 @@ func RunRaftNode(cfg NodeConfig) {
 		te:              NONE,
 		mu:              sync.Mutex{},
 		// Sender not implemented until receivers are running
-		l: CreateLogger(cfg.Id),
+		l: l,
 	}
 	for _, nodeId := range node.externalNodeIds {
 		node.nextIndex[nodeId] = 0
@@ -100,7 +104,7 @@ func RunRaftNode(cfg NodeConfig) {
 	wg2.Add(1)
 	go node.Run()
 
-	node.l.Log("Launched")
+	node.l.Log(node.id, "Launched")
 	node.becomeFollower(0)
 	wg2.Wait()
 }
@@ -109,7 +113,7 @@ func (node *raftNode) Run() {
 	for {
 		time.Sleep(500 * time.Millisecond)
 
-		node.l.Log(node.getState().String())
+		node.l.Log(node.id, node.getState().String())
 	}
 }
 
@@ -140,7 +144,7 @@ func (node *raftNode) getState() STATE {
 }
 
 func (node *raftNode) runElectionTimer() {
-	node.l.Log("starting election timer")
+	node.l.Log(node.id, "Starting election timer")
 	timeout := node.generateElectionTimeout()
 
 	for {
@@ -155,18 +159,18 @@ func (node *raftNode) runElectionTimer() {
 		}
 		// If the timer expired, trigger an election
 		if timerEvent == NONE {
-			node.l.Log("Timer Expired")
+			node.l.Log(node.id, "Timer Expired")
 			node.beginElection()
 			return
 		}
 
-		node.l.Log("Timer Reset")
+		node.l.Log(node.id, "Timer Reset")
 	}
 }
 
 // Lock must be aquired before calling this
 func (node *raftNode) beginElection() {
-	node.l.Log("Starting election")
+	node.l.Log(node.id, "Starting election")
 	node.mu.Lock()
 
 	node.state = CANDIDATE
@@ -181,11 +185,11 @@ func (node *raftNode) beginElection() {
 	node.mu.Unlock()
 
 	result, newTerm := node.sender.requestVotes(term, raftNodeId, lastLogIndex, lastLogTerm)
-	node.l.Log(fmt.Sprintf("Got vote result %s with term %d", result, node.term))
+	node.l.Log(node.id, fmt.Sprintf("requestVotes %s. Term = %d", result, node.term))
 
 	// If we become a follower or leader during this time
 	if node.getState() != CANDIDATE {
-		node.l.Log("Not candidate anymore")
+		node.l.Log(node.id, "Not candidate anymore")
 		return
 	}
 	switch result {
@@ -197,7 +201,7 @@ func (node *raftNode) beginElection() {
 }
 
 func (node *raftNode) becomeFollower(newTerm int32) {
-	node.l.Log("Became follower")
+	node.l.Log(node.id, "Became follower")
 	node.mu.Lock()
 
 	node.state = FOLLOWER
@@ -211,7 +215,7 @@ func (node *raftNode) becomeFollower(newTerm int32) {
 
 // LOCK MUST BE ACQUIRED
 func (node *raftNode) becomeLeader() {
-	node.l.Log("Became LEADER")
+	node.l.Log(node.id, "Became LEADER")
 	node.mu.Lock()
 	node.state = LEADER
 	node.votedFor = -1
@@ -225,7 +229,7 @@ func (node *raftNode) becomeLeader() {
 				return
 			}
 
-			node.l.Log("Sending append entries")
+			node.l.Log(node.id, "Sending append entries")
 			result, term := node.sender.appendEntries(term, leaderId, 0, 0, 0, make(map[int32]string))
 
 			switch result {

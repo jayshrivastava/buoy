@@ -19,12 +19,14 @@ func main() {
 		return
 	}
 
+	logger := CreateLogger(int32(len(config.nodesCfg)))
+
 	if !*runAsClient {
 
 		wg := sync.WaitGroup{}
 		for _, cfg := range config.nodesCfg {
 			wg.Add(1)
-			go node.RunRaftNode(cfg)
+			go node.RunRaftNode(cfg, logger)
 		}
 		wg.Wait()
 

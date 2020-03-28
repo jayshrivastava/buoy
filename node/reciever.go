@@ -14,7 +14,7 @@ type raftReceiver struct {
 
 func RunRaftReceiver(iport string, node *raftNode) {
 
-	lis, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%s", iport))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", iport))
 	if err != nil {
 		fmt.Printf("Could not start api server on port %s\n", iport)
 		return
@@ -30,7 +30,7 @@ func (receiver *raftReceiver) RequestVotes(ctx context.Context, req *RequestVote
 	node.mu.Lock()
 	defer node.mu.Unlock()
 
-	node.l.Log(fmt.Sprintf("Was requested vote from %d with term %d", req.RaftNodeId, req.Term))
+	node.l.Log(node.id, fmt.Sprintf("Rec. RequestVotes from %d term %d", req.RaftNodeId, req.Term))
 
 	res := RequestVotesResponse{}
 
@@ -59,7 +59,7 @@ func (receiver *raftReceiver) AppendEntries(ctx context.Context, req *AppendEntr
 	term := node.term
 	node.mu.Unlock()
 
-	node.l.Log(fmt.Sprintf("Recieved appendEntries req from (leader) %d term %d", req.LeaderId, req.Term))
+	node.l.Log(node.id, fmt.Sprintf("Rec. appendEntries from %d term %d", req.LeaderId, req.Term))
 
 	res := AppendEntriesResponse{}
 
@@ -69,7 +69,7 @@ func (receiver *raftReceiver) AppendEntries(ctx context.Context, req *AppendEntr
 			if node.getState() != FOLLOWER {
 				node.becomeFollower(req.Term)
 			} else {
-				node.l.Log("setting timer to be reset")
+				node.l.Log(node.id, "setting timer to be reset")
 				node.resetTimerEvent(req.Term)
 			}
 			res.Term = term
