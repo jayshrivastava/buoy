@@ -95,6 +95,9 @@ func (client *sender) heartbeat(term int32, leaderId int32) (APPEND_ENTRIES_RETU
 	responses := []*AppendEntriesResponse{}
 	mu := sync.Mutex{}
 	wg := sync.WaitGroup{}
+	client.node.dataMu.Lock()
+	ci := client.node.commitIndex
+	client.node.dataMu.Unlock()
 
 	for _, nodeClient := range client.rpcClients {
 		req := AppendEntriesRequest{
@@ -102,7 +105,7 @@ func (client *sender) heartbeat(term int32, leaderId int32) (APPEND_ENTRIES_RETU
 			LeaderId:          leaderId,
 			PrevLogIndex:      0,
 			PrevLogTerm:       0,
-			LeaderCommitIndex: 0,
+			LeaderCommitIndex: ci,
 			Key:               0,
 			Value:             "",
 		}
@@ -116,6 +119,8 @@ func (client *sender) heartbeat(term int32, leaderId int32) (APPEND_ENTRIES_RETU
 				mu.Lock()
 				responses = append(responses, response)
 				mu.Unlock()
+			} else {
+				client.node.l.Log(client.node.id, err.Error())
 			}
 		}(nodeClient)
 	}
@@ -152,10 +157,15 @@ func (client *sender) appendEntries(to int32, term int32, leaderId int32, prevLo
 	response, err := nodeClient.AppendEntries(ctx, &req)
 	if err != nil {
 		client.node.l.Log(leaderId, err.Error())
+		return SUCCESS, term
 	}
 
 	if response.Term > term {
 		return AE_TERM_OUT_OF_DATE, 1
+	}
+
+	if response.Success == false {
+		return FAILIURE, term
 	}
 
 	return SUCCESS, term

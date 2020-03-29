@@ -78,6 +78,16 @@ func (receiver *raftReceiver) AppendEntries(ctx context.Context, req *AppendEntr
 		}
 	}
 
+	node.dataMu.Lock()
+	if node.commitIndex < req.LeaderCommitIndex && int32(len(node.log) - 1) >= req.LeaderCommitIndex {
+		node.commitIndex = req.LeaderCommitIndex
+		if node.commitIndex > node.lastApplied {
+			node.commitIndex = req.LeaderCommitIndex
+			node.CatchupCommits()
+		}
+	}
+	node.dataMu.Unlock()
+
 	// Just return if heartbeat
 	if req.Key == 0 {
 		res.Term = term
@@ -96,17 +106,19 @@ func (receiver *raftReceiver) AppendEntries(ctx context.Context, req *AppendEntr
 
 	// If an existing entry conflicts with a new one (same index but different terms), delete the existing entry and all that follow it (§5.3)
 	// Here we can delete all after prevlogindex
-	node.log = node.log[req.PrevLogIndex:]
+	node.log = node.log[:req.PrevLogIndex+1]
 
 	// Append any new entries not already in the log
 	node.AddLogEntry(req.Key, req.Value, req.Term)
 
 	// If leaderCommit > commitIndex, set commitIndex = min(leaderCommit, index of last new entry)
-	if int32(len(node.log))-1 > req.LeaderCommitIndex {
-		node.commitIndex = req.LeaderCommitIndex
-	} else {
-		node.commitIndex = int32(len(node.log)) - 1
-	}
+	if node.commitIndex < req.LeaderCommitIndex {
+		if req.LeaderCommitIndex > int32(len(node.log)) - 1 {
+			node.commitIndex = int32(len(node.log)) - 1 
+		} else {
+			node.commitIndex = req.LeaderCommitIndex
+		}
+	} 
 
 	node.dataMu.Unlock()
 

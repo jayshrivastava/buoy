@@ -39,8 +39,6 @@ type raftNode struct {
 	commitIndex int32
 	// Index of highest log entry known to be applied to the key value store
 	lastApplied int32
-	// Nex† Index (for each server, the index of the next entry to send to that server)
-	nextIndex map[int32]int32
 	// Match Index (for each server, the index of hightest entry known to be replicated on that server)
 	matchIndex map[int32]int32
 	// Key value store
@@ -51,22 +49,12 @@ type raftNode struct {
 	te TIMEREVENT
 	// Lock - applies everything other than locks below this one
 	mu sync.Mutex
-	// Lock - protects commitIndex, lastApplied, log, and kv, nextIndex, and matchIndex
+	// Lock - protects commitIndex, lastApplied, log, and kv, and matchIndex
 	dataMu sync.RWMutex
 	// RPC Client
 	sender RaftSender
 	// logger
 	l NodeLogger
-}
-
-type RaftNode interface {
-	runElectionTimer()
-	beginElection()
-	generateElectionTimeout()
-	becomeFollower(newTerm int32)
-	becomeLeader()
-	appendToLog()
-	Run()
 }
 
 func RunRaftNode(cfg NodeConfig, l NodeLogger) {
@@ -83,7 +71,6 @@ func RunRaftNode(cfg NodeConfig, l NodeLogger) {
 		votedFor:        -1,
 		commitIndex:     0,
 		lastApplied:     0,
-		nextIndex:       map[int32]int32{},
 		matchIndex:      map[int32]int32{},
 		kv:              map[int32]string{},
 		log:             []*logEntry{&logEntry{key: 0, value: "", term: 0}},
@@ -94,7 +81,6 @@ func RunRaftNode(cfg NodeConfig, l NodeLogger) {
 		l: l,
 	}
 	for _, nodeId := range node.externalNodeIds {
-		node.nextIndex[nodeId] = 0
 		node.matchIndex[nodeId] = 0
 	}
 
@@ -114,8 +100,18 @@ func RunRaftNode(cfg NodeConfig, l NodeLogger) {
 
 // lock must be acquired here
 func (node *raftNode) AddLogEntry(key int32, value string, term int32) {
-	node.l.Log(node.id, fmt.Sprintf("Appending log entry k:%d v:%s term:%d", key, value, term))
+	node.l.Log(node.id, fmt.Sprintf("Appending log entry k:%d v:%s term:%d", key, value, term))	
 	node.log = append(node.log, &logEntry{key: key, value: value, term: term})
+}
+
+// lock must be acquired here
+func (node *raftNode) CatchupCommits() {
+
+	for i := node.lastApplied + 1; i <= node.commitIndex; i++ {
+		node.kv[node.log[i].key] = node.log[i].value
+		node.l.Log(node.id, fmt.Sprintf("Committing Log Entry k:%d v:%s", node.log[i].key, node.log[i].value))
+	}
+	node.lastApplied = node.commitIndex
 }
 
 func (node *raftNode) Run() {
@@ -232,7 +228,6 @@ func (node *raftNode) becomeLeader() {
 	leaderId := node.id
 	node.dataMu.RLock()
 	for _, nodeId := range node.externalNodeIds {
-		node.nextIndex[nodeId] = int32(len(node.log))
 		node.matchIndex[nodeId] = 0
 	}
 	node.dataMu.RUnlock()

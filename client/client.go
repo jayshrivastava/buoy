@@ -59,7 +59,7 @@ func (bc *buoyClient) findLeader() (string, error) {
 		}
 	}
 
-	req := api.AddEntryRequest{}
+	req := api.AddEntryRequest{Key: 0, Value: ""}
 	wg := sync.WaitGroup{}
 	mu := sync.Mutex{}
 
@@ -106,7 +106,6 @@ func (bc *buoyClient) Run() {
 		for {
 			text, _ := reader.ReadString('\n')
 			text = strings.TrimSuffix(text, "\n")
-
 			kv := strings.Split(text, "=")
 			if i, err := strconv.Atoi(kv[0]); err == nil {
 				req := api.AddEntryRequest{
@@ -125,5 +124,6 @@ func (bc *buoyClient) Run() {
 				}
 			}
 		}
+		
 	}
 }
