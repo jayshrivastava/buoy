@@ -68,11 +68,13 @@ func (client *sender) requestVotes(term int32, raftNodeId int32, lastLogIndex in
 	}
 	wg.Wait()
 	for _, response := range responses {
-		if response.Term > maxTermSeen {
-			maxTermSeen = response.Term
-		}
-		if response.VoteGranted {
-			votesReceived += 1
+		if response != nil {
+			if response.Term > maxTermSeen {
+				maxTermSeen = response.Term
+			}
+			if response.VoteGranted {
+				votesReceived += 1
+			}
 		}
 	}
 
@@ -127,8 +129,10 @@ func (client *sender) heartbeat(term int32, leaderId int32) (APPEND_ENTRIES_RETU
 	wg.Wait()
 
 	for _, response := range responses {
-		if response.Term > maxTermSeen {
-			maxTermSeen = response.Term
+		if response != nil {
+			if response.Term > maxTermSeen {
+				maxTermSeen = response.Term
+			}
 		}
 	}
 

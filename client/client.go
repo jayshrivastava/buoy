@@ -79,17 +79,53 @@ func (bc *buoyClient) findLeader() (string, error) {
 	wg.Wait()
 
 	leader := ""
-	for _, data := range hcrs {
+	lid := -1
+	for i, data := range hcrs {
 		if data.response != nil && data.response.Success {
 			leader = data.host
+			lid = i
 		}
 	}
 
 	if leader == "" {
 		return leader, fmt.Errorf("Could not find leader")
 	}
-	fmt.Println("Found leader")
+	fmt.Println("Found leader", lid)
 	return leader, nil
+}
+
+func (bc *buoyClient) kill(id int32) {
+	conn, err := grpc.Dial(bc.hosts[id], grpc.WithInsecure())
+	defer conn.Close()
+	if err != nil {
+		fmt.Println("Could not kill node", id)
+		return
+	}
+	client := api.NewApiClient(conn)
+
+	req := api.KillRequest{}
+	if _, err := client.Kill(context.Background(), &req); err == nil {
+		fmt.Println("Killed node", id)
+	} else {
+		fmt.Println("Error killing node", id)
+	}
+}
+
+func (bc *buoyClient) revive(id int32) {
+	conn, err := grpc.Dial(bc.hosts[id], grpc.WithInsecure())
+	defer conn.Close()
+	if err != nil {
+		fmt.Println("Could not revive node", id)
+		return
+	}
+	client := api.NewApiClient(conn)
+
+	req := api.ReviveRequest{}
+	if _, err := client.Revive(context.Background(), &req); err == nil {
+		fmt.Println("Revived node", id)
+	} else {
+		fmt.Println("Error reviving node", id)
+	}
 }
 
 func (bc *buoyClient) Run() {
@@ -98,7 +134,7 @@ func (bc *buoyClient) Run() {
 		host, err = bc.findLeader()
 	}
 	conn, _ := grpc.Dial(host, grpc.WithInsecure())
-	defer conn.Close()
+
 	client := api.NewApiClient(conn)
 
 	for {
@@ -106,24 +142,40 @@ func (bc *buoyClient) Run() {
 		for {
 			text, _ := reader.ReadString('\n')
 			text = strings.TrimSuffix(text, "\n")
-			kv := strings.Split(text, "=")
-			if i, err := strconv.Atoi(kv[0]); err == nil {
-				req := api.AddEntryRequest{
-					Key:   int32(i),
-					Value: kv[1],
+
+			if len(text) >= 4 && text[0:4] == "kill" {
+				command := strings.Split(text, " ")
+				if i, err := strconv.Atoi(command[1]); err == nil {
+					bc.kill(int32(i))
 				}
-				res, err := client.AddEntry(context.Background(), &req)
-				if err != nil {
-					fmt.Println(err.Error())
-					host, err = bc.findLeader()
-					for err != nil {
-						host, err = bc.findLeader()
+			} else if len(text) >= 6 && text[0:6] == "revive" {
+				command := strings.Split(text, " ")
+				if i, err := strconv.Atoi(command[1]); err == nil {
+					bc.revive(int32(i))
+				}
+			} else {
+				kv := strings.Split(text, "=")
+				if i, err := strconv.Atoi(kv[0]); err == nil {
+					req := api.AddEntryRequest{
+						Key:   int32(i),
+						Value: kv[1],
 					}
-				} else {
-					fmt.Println("Response status: ", res.Success)
+					res, err := client.AddEntry(context.Background(), &req)
+					if err != nil {
+						fmt.Println(err.Error())
+						host, err = bc.findLeader()
+						for err != nil {
+							host, err = bc.findLeader()
+						}
+						conn, _ = grpc.Dial(host, grpc.WithInsecure())
+						client = api.NewApiClient(conn)
+						res, _ = client.AddEntry(context.Background(), &req)
+						fmt.Println("Response status: ", res.Success)
+					} else {
+						fmt.Println("Response status: ", res.Success)
+					}
 				}
 			}
 		}
-		
 	}
 }

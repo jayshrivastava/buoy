@@ -26,6 +26,40 @@ func RunApiServer(port string, node *raftNode) {
 	server.Serve(lis)
 }
 
+func (s *apiServer) Kill(context context.Context, req *api.KillRequest) (*api.KillResponse, error) {
+	res := api.KillResponse{}
+	node := s.node
+	node.mu.Lock()
+	defer node.mu.Unlock()
+
+	fmt.Println("got kill request")
+	node.l.Log(node.id, "Dead")
+
+	if node.state == DEAD {
+		return nil, fmt.Errorf("Node is already dead")
+	}
+	node.state = DEAD
+
+	return &res, nil
+}
+func (s *apiServer) Revive(context context.Context, req *api.ReviveRequest) (*api.ReviveResponse, error) {
+	res := api.ReviveResponse{}
+	node := s.node
+	node.mu.Lock()
+
+	fmt.Println("got revive request")
+	node.l.Log(node.id, "Revived")
+
+	if node.state == DEAD {
+		node.mu.Unlock()
+
+		node.becomeFollower(0)
+		return &res, nil
+	}
+	
+	return nil, fmt.Errorf("Node is not dead, could not revive it")
+}
+
 func (s *apiServer) AddEntry(context context.Context, req *api.AddEntryRequest) (*api.AddEntryResponse, error) {
 	node := s.node
 	node.mu.Lock()
@@ -34,7 +68,7 @@ func (s *apiServer) AddEntry(context context.Context, req *api.AddEntryRequest) 
 
 	if s.node.state != LEADER {
 		res.Success = false
-		return &res, nil
+		return &res, fmt.Errorf("Not leader")
 	}
 
 	if req.Key == 0 || req.Value == "" {
@@ -45,7 +79,6 @@ func (s *apiServer) AddEntry(context context.Context, req *api.AddEntryRequest) 
 		node.dataMu.Lock()
 
 		node.AddLogEntry(req.Key, req.Value, node.term)
-
 
 		for _, peerId := range node.externalNodeIds {
 			returnMsg, term := node.sender.appendEntries(peerId, node.term, node.id, int32(len(node.log)-2), node.log[len(node.log)-2].term, node.lastApplied, req.Key, req.Value)
@@ -58,7 +91,7 @@ func (s *apiServer) AddEntry(context context.Context, req *api.AddEntryRequest) 
 				fromLast := 3
 				node.l.Log(node.id, fmt.Sprintf("Node %d reported an appendEntries failiure. Finding nextIndex...", peerId))
 
-				for returnMsg, term = node.sender.appendEntries(peerId, node.term, node.id, int32(len(node.log)-fromLast), node.log[len(node.log)-fromLast].term, node.lastApplied, req.Key, req.Value); returnMsg != SUCCESS; {
+				for returnMsg, term = node.sender.appendEntries(peerId, node.term, node.id, int32(len(node.log)-fromLast), node.log[len(node.log)-fromLast].term, node.lastApplied, node.log[len(node.log)-fromLast+1].key, node.log[len(node.log)-fromLast+1].value); returnMsg != SUCCESS; {
 					if returnMsg == AE_TERM_OUT_OF_DATE {
 						node.dataMu.Unlock()
 						node.becomeFollower(term)
@@ -73,7 +106,7 @@ func (s *apiServer) AddEntry(context context.Context, req *api.AddEntryRequest) 
 				node.l.Log(node.id, fmt.Sprintf("Found nextIndex for node %d. Catching up node...s", peerId))
 
 				for {
-					returnMsg, term = node.sender.appendEntries(peerId, node.term, node.id, int32(len(node.log)-fromLast), node.log[len(node.log)-fromLast].term, node.lastApplied, req.Key, req.Value)
+					returnMsg, term = node.sender.appendEntries(peerId, node.term, node.id, int32(len(node.log)-fromLast), node.log[len(node.log)-fromLast].term, node.lastApplied, node.log[len(node.log)-fromLast+1].key, node.log[len(node.log)-fromLast+1].value)
 					if returnMsg == AE_TERM_OUT_OF_DATE {
 						node.dataMu.Unlock()
 						node.becomeFollower(term)

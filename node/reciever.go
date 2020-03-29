@@ -29,6 +29,9 @@ func (receiver *raftReceiver) RequestVotes(ctx context.Context, req *RequestVote
 	node := receiver.node
 	node.mu.Lock()
 	defer node.mu.Unlock()
+	if node.state == DEAD {
+		return nil, fmt.Errorf("AppendEntries Error. Node is DEAD")
+	}
 
 	node.l.Log(node.id, fmt.Sprintf("Rec. RequestVotes from %d term %d", req.RaftNodeId, req.Term))
 
@@ -56,6 +59,10 @@ func (receiver *raftReceiver) RequestVotes(ctx context.Context, req *RequestVote
 func (receiver *raftReceiver) AppendEntries(ctx context.Context, req *AppendEntriesRequest) (*AppendEntriesResponse, error) {
 	node := receiver.node
 	node.mu.Lock()
+	if node.state == DEAD {
+		node.mu.Unlock()
+		return nil, fmt.Errorf("AppendEntries Error. Node is DEAD")
+	}
 	term := node.term
 	node.mu.Unlock()
 

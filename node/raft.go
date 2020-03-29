@@ -93,7 +93,7 @@ func RunRaftNode(cfg NodeConfig, l NodeLogger) {
 	wg2.Add(1)
 	go node.Run()
 
-	node.l.Log(node.id, "Launched")
+	node.l.Log(node.id, "Launched Node")
 	node.becomeFollower(0)
 	wg2.Wait()
 }
@@ -268,10 +268,11 @@ const (
 	LEADER STATE = iota
 	FOLLOWER
 	CANDIDATE
+	DEAD
 )
 
 func (t STATE) String() string {
-	return [...]string{"LEADER", "FOLLOWER", "CANDIDATE"}[t]
+	return [...]string{"LEADER", "FOLLOWER", "CANDIDATE", "DEAD"}[t]
 }
 
 // Timers

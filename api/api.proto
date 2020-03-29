@@ -4,6 +4,8 @@ package api;
 
 service Api {
     rpc AddEntry(AddEntryRequest) returns (AddEntryResponse) {}
+    rpc Kill(KillRequest) returns (KillResponse) {}
+    rpc Revive(ReviveRequest) returns (ReviveResponse) {}
 }
 
 message AddEntryRequest {
@@ -14,3 +16,8 @@ message AddEntryRequest {
 message AddEntryResponse {
     bool Success = 1;
 }
+
+message KillRequest{}
+message KillResponse{}
+message ReviveRequest{}
+message ReviveResponse{}

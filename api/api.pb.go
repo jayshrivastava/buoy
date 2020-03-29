@@ -110,9 +110,137 @@ func (m *AddEntryResponse) GetSuccess() bool {
 	return false
 }
 
+type KillRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *KillRequest) Reset()         { *m = KillRequest{} }
+func (m *KillRequest) String() string { return proto.CompactTextString(m) }
+func (*KillRequest) ProtoMessage()    {}
+func (*KillRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{2}
+}
+
+func (m *KillRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_KillRequest.Unmarshal(m, b)
+}
+func (m *KillRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_KillRequest.Marshal(b, m, deterministic)
+}
+func (m *KillRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KillRequest.Merge(m, src)
+}
+func (m *KillRequest) XXX_Size() int {
+	return xxx_messageInfo_KillRequest.Size(m)
+}
+func (m *KillRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_KillRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_KillRequest proto.InternalMessageInfo
+
+type KillResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *KillResponse) Reset()         { *m = KillResponse{} }
+func (m *KillResponse) String() string { return proto.CompactTextString(m) }
+func (*KillResponse) ProtoMessage()    {}
+func (*KillResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{3}
+}
+
+func (m *KillResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_KillResponse.Unmarshal(m, b)
+}
+func (m *KillResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_KillResponse.Marshal(b, m, deterministic)
+}
+func (m *KillResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KillResponse.Merge(m, src)
+}
+func (m *KillResponse) XXX_Size() int {
+	return xxx_messageInfo_KillResponse.Size(m)
+}
+func (m *KillResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_KillResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_KillResponse proto.InternalMessageInfo
+
+type ReviveRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ReviveRequest) Reset()         { *m = ReviveRequest{} }
+func (m *ReviveRequest) String() string { return proto.CompactTextString(m) }
+func (*ReviveRequest) ProtoMessage()    {}
+func (*ReviveRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{4}
+}
+
+func (m *ReviveRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ReviveRequest.Unmarshal(m, b)
+}
+func (m *ReviveRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ReviveRequest.Marshal(b, m, deterministic)
+}
+func (m *ReviveRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReviveRequest.Merge(m, src)
+}
+func (m *ReviveRequest) XXX_Size() int {
+	return xxx_messageInfo_ReviveRequest.Size(m)
+}
+func (m *ReviveRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReviveRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ReviveRequest proto.InternalMessageInfo
+
+type ReviveResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ReviveResponse) Reset()         { *m = ReviveResponse{} }
+func (m *ReviveResponse) String() string { return proto.CompactTextString(m) }
+func (*ReviveResponse) ProtoMessage()    {}
+func (*ReviveResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_00212fb1f9d3bf1c, []int{5}
+}
+
+func (m *ReviveResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ReviveResponse.Unmarshal(m, b)
+}
+func (m *ReviveResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ReviveResponse.Marshal(b, m, deterministic)
+}
+func (m *ReviveResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReviveResponse.Merge(m, src)
+}
+func (m *ReviveResponse) XXX_Size() int {
+	return xxx_messageInfo_ReviveResponse.Size(m)
+}
+func (m *ReviveResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReviveResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ReviveResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*AddEntryRequest)(nil), "api.AddEntryRequest")
 	proto.RegisterType((*AddEntryResponse)(nil), "api.AddEntryResponse")
+	proto.RegisterType((*KillRequest)(nil), "api.KillRequest")
+	proto.RegisterType((*KillResponse)(nil), "api.KillResponse")
+	proto.RegisterType((*ReviveRequest)(nil), "api.ReviveRequest")
+	proto.RegisterType((*ReviveResponse)(nil), "api.ReviveResponse")
 }
 
 func init() {
@@ -120,17 +248,22 @@ func init() {
 }
 
 var fileDescriptor_00212fb1f9d3bf1c = []byte{
-	// 155 bytes of a gzipped FileDescriptorProto
+	// 228 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x4c, 0x2c, 0xc8, 0xd4,
 	0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x4e, 0x2c, 0xc8, 0x54, 0xb2, 0xe4, 0xe2, 0x77, 0x4c,
 	0x49, 0x71, 0xcd, 0x2b, 0x29, 0xaa, 0x0c, 0x4a, 0x2d, 0x2c, 0x4d, 0x2d, 0x2e, 0x11, 0x12, 0xe0,
 	0x62, 0xf6, 0x4e, 0xad, 0x94, 0x60, 0x54, 0x60, 0xd4, 0x60, 0x0d, 0x02, 0x31, 0x85, 0x44, 0xb8,
 	0x58, 0xc3, 0x12, 0x73, 0x4a, 0x53, 0x25, 0x98, 0x14, 0x18, 0x35, 0x38, 0x83, 0x20, 0x1c, 0x25,
 	0x1d, 0x2e, 0x01, 0x84, 0xd6, 0xe2, 0x82, 0xfc, 0xbc, 0xe2, 0x54, 0x21, 0x09, 0x2e, 0xf6, 0xe0,
-	0xd2, 0xe4, 0xe4, 0xd4, 0xe2, 0x62, 0xb0, 0x7e, 0x8e, 0x20, 0x18, 0xd7, 0xc8, 0x81, 0x8b, 0xd9,
-	0xb1, 0x20, 0x53, 0xc8, 0x92, 0x8b, 0x03, 0xa6, 0x49, 0x48, 0x44, 0x0f, 0xe4, 0x18, 0x34, 0xeb,
-	0xa5, 0x44, 0xd1, 0x44, 0x21, 0x26, 0x2b, 0x31, 0x24, 0xb1, 0x81, 0x9d, 0x6d, 0x0c, 0x08, 0x00,
-	0x00, 0xff, 0xff, 0x25, 0x61, 0xc3, 0xa3, 0xc3, 0x00, 0x00, 0x00,
+	0xd2, 0xe4, 0xe4, 0xd4, 0xe2, 0x62, 0xb0, 0x7e, 0x8e, 0x20, 0x18, 0x57, 0x89, 0x97, 0x8b, 0xdb,
+	0x3b, 0x33, 0x27, 0x07, 0x6a, 0x89, 0x12, 0x1f, 0x17, 0x0f, 0x84, 0x0b, 0xd1, 0xa8, 0xc4, 0xcf,
+	0xc5, 0x1b, 0x94, 0x5a, 0x96, 0x59, 0x96, 0x0a, 0x53, 0x20, 0xc0, 0xc5, 0x07, 0x13, 0x80, 0x28,
+	0x31, 0x5a, 0xc2, 0xc8, 0xc5, 0xec, 0x58, 0x90, 0x29, 0x64, 0xc9, 0xc5, 0x01, 0xb3, 0x57, 0x48,
+	0x44, 0x0f, 0xe4, 0x1f, 0x34, 0x1f, 0x48, 0x89, 0xa2, 0x89, 0x42, 0xed, 0x60, 0x10, 0xd2, 0xe5,
+	0x62, 0x01, 0xd9, 0x2a, 0x24, 0x00, 0x56, 0x80, 0xe4, 0x1e, 0x29, 0x41, 0x24, 0x11, 0xb8, 0x72,
+	0x63, 0x2e, 0x36, 0x88, 0x1b, 0x84, 0x84, 0xc0, 0xd2, 0x28, 0x2e, 0x94, 0x12, 0x46, 0x11, 0x83,
+	0x69, 0x4a, 0x62, 0x03, 0x87, 0xae, 0x31, 0x20, 0x00, 0x00, 0xff, 0xff, 0xd9, 0x6b, 0xda, 0xc6,
+	0x6a, 0x01, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -146,6 +279,8 @@ const _ = grpc.SupportPackageIsVersion6
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type ApiClient interface {
 	AddEntry(ctx context.Context, in *AddEntryRequest, opts ...grpc.CallOption) (*AddEntryResponse, error)
+	Kill(ctx context.Context, in *KillRequest, opts ...grpc.CallOption) (*KillResponse, error)
+	Revive(ctx context.Context, in *ReviveRequest, opts ...grpc.CallOption) (*ReviveResponse, error)
 }
 
 type apiClient struct {
@@ -165,9 +300,29 @@ func (c *apiClient) AddEntry(ctx context.Context, in *AddEntryRequest, opts ...g
 	return out, nil
 }
 
+func (c *apiClient) Kill(ctx context.Context, in *KillRequest, opts ...grpc.CallOption) (*KillResponse, error) {
+	out := new(KillResponse)
+	err := c.cc.Invoke(ctx, "/api.Api/Kill", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *apiClient) Revive(ctx context.Context, in *ReviveRequest, opts ...grpc.CallOption) (*ReviveResponse, error) {
+	out := new(ReviveResponse)
+	err := c.cc.Invoke(ctx, "/api.Api/Revive", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ApiServer is the server API for Api service.
 type ApiServer interface {
 	AddEntry(context.Context, *AddEntryRequest) (*AddEntryResponse, error)
+	Kill(context.Context, *KillRequest) (*KillResponse, error)
+	Revive(context.Context, *ReviveRequest) (*ReviveResponse, error)
 }
 
 // UnimplementedApiServer can be embedded to have forward compatible implementations.
@@ -176,6 +331,12 @@ type UnimplementedApiServer struct {
 
 func (*UnimplementedApiServer) AddEntry(ctx context.Context, req *AddEntryRequest) (*AddEntryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddEntry not implemented")
+}
+func (*UnimplementedApiServer) Kill(ctx context.Context, req *KillRequest) (*KillResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Kill not implemented")
+}
+func (*UnimplementedApiServer) Revive(ctx context.Context, req *ReviveRequest) (*ReviveResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Revive not implemented")
 }
 
 func RegisterApiServer(s *grpc.Server, srv ApiServer) {
@@ -200,6 +361,42 @@ func _Api_AddEntry_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Api_Kill_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(KillRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiServer).Kill(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.Api/Kill",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiServer).Kill(ctx, req.(*KillRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Api_Revive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReviveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiServer).Revive(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.Api/Revive",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiServer).Revive(ctx, req.(*ReviveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Api_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "api.Api",
 	HandlerType: (*ApiServer)(nil),
@@ -207,6 +404,14 @@ var _Api_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AddEntry",
 			Handler:    _Api_AddEntry_Handler,
+		},
+		{
+			MethodName: "Kill",
+			Handler:    _Api_Kill_Handler,
+		},
+		{
+			MethodName: "Revive",
+			Handler:    _Api_Revive_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
