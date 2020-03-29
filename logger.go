@@ -109,7 +109,7 @@ const (
     }
     table td{
 		border:1px solid #000000;
-		max-width: 150px;
+		max-width: 310px;
 		padding: 5px;
     }
 	`

@@ -31,7 +31,7 @@ type RaftSender interface {
 
 func (client *sender) requestVotes(term int32, raftNodeId int32, lastLogIndex int32, lastLogTerm int32) (REQUEST_VOTES_RETURN_TYPE, int32) {
 	node := client.node
-	node.l.Log(node.id, fmt.Sprintf("Sending requestVotes"))
+	node.l.Log(node.id, fmt.Sprintf("Sending Request for Votes to all nodes"))
 
 	votesReceived := 1
 	maxTermSeen := term
@@ -51,12 +51,11 @@ func (client *sender) requestVotes(term int32, raftNodeId int32, lastLogIndex in
 
 		go func(nodeClient RaftClient, sendingTo int32) {
 			defer wg.Done()
-			node.l.Log(node.id, fmt.Sprintf("Sent requestVotes to %d", sendingTo))
 			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 			defer cancel()
 			response, err := nodeClient.RequestVotes(ctx, &req)
 			if err == nil {
-				node.l.Log(node.id, fmt.Sprintf("Got requestVotes response %t from %d", response.VoteGranted, sendingTo))
+				node.l.Log(node.id, fmt.Sprintf("Got Request for Votes Response %t from Node %d", response.VoteGranted, sendingTo))
 				mu.Lock()
 				responses = append(responses, response)
 				mu.Unlock()
@@ -78,7 +77,7 @@ func (client *sender) requestVotes(term int32, raftNodeId int32, lastLogIndex in
 		}
 	}
 
-	node.l.Log(node.id, fmt.Sprintf("Rec. %d votes", votesReceived))
+	node.l.Log(node.id, fmt.Sprintf("Recieved %d Votes in Total", votesReceived))
 
 	if votesReceived > len(client.rpcClients)/2 {
 		return MAJORITY, term

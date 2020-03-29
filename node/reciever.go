@@ -33,7 +33,7 @@ func (receiver *raftReceiver) RequestVotes(ctx context.Context, req *RequestVote
 		return nil, fmt.Errorf("AppendEntries Error. Node is DEAD")
 	}
 
-	node.l.Log(node.id, fmt.Sprintf("Rec. RequestVotes from %d term %d", req.RaftNodeId, req.Term))
+	node.l.Log(node.id, fmt.Sprintf("Node %d Requested Vote with Term %d", req.RaftNodeId, req.Term))
 
 	res := RequestVotesResponse{}
 
@@ -66,7 +66,7 @@ func (receiver *raftReceiver) AppendEntries(ctx context.Context, req *AppendEntr
 	term := node.term
 	node.mu.Unlock()
 
-	node.l.Log(node.id, fmt.Sprintf("Rec. appendEntries from %d term %d key %d value %s", req.LeaderId, req.Term, req.Key, req.Value))
+	node.l.Log(node.id, fmt.Sprintf("Node %d Appending Entry { key %d value %s term %d }", req.LeaderId, req.Key, req.Value, req.Term))
 
 	res := AppendEntriesResponse{}
 
@@ -80,13 +80,12 @@ func (receiver *raftReceiver) AppendEntries(ctx context.Context, req *AppendEntr
 		if node.getState() != FOLLOWER {
 			node.becomeFollower(req.Term)
 		} else {
-			node.l.Log(node.id, "setting timer to be reset")
 			node.resetTimerEvent(req.Term)
 		}
 	}
 
 	node.dataMu.Lock()
-	if node.commitIndex < req.LeaderCommitIndex && int32(len(node.log) - 1) >= req.LeaderCommitIndex {
+	if node.commitIndex < req.LeaderCommitIndex && int32(len(node.log)-1) >= req.LeaderCommitIndex {
 		node.commitIndex = req.LeaderCommitIndex
 		if node.commitIndex > node.lastApplied {
 			node.commitIndex = req.LeaderCommitIndex
@@ -120,12 +119,12 @@ func (receiver *raftReceiver) AppendEntries(ctx context.Context, req *AppendEntr
 
 	// If leaderCommit > commitIndex, set commitIndex = min(leaderCommit, index of last new entry)
 	if node.commitIndex < req.LeaderCommitIndex {
-		if req.LeaderCommitIndex > int32(len(node.log)) - 1 {
-			node.commitIndex = int32(len(node.log)) - 1 
+		if req.LeaderCommitIndex > int32(len(node.log))-1 {
+			node.commitIndex = int32(len(node.log)) - 1
 		} else {
 			node.commitIndex = req.LeaderCommitIndex
 		}
-	} 
+	}
 
 	node.dataMu.Unlock()
 

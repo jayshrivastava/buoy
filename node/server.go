@@ -32,12 +32,11 @@ func (s *apiServer) Kill(context context.Context, req *api.KillRequest) (*api.Ki
 	node.mu.Lock()
 	defer node.mu.Unlock()
 
-	fmt.Println("got kill request")
-	node.l.Log(node.id, "Dead")
-
 	if node.state == DEAD {
 		return nil, fmt.Errorf("Node is already dead")
 	}
+
+	node.l.Log(node.id, "This Node is Dead")
 	node.state = DEAD
 
 	return &res, nil
@@ -47,16 +46,14 @@ func (s *apiServer) Revive(context context.Context, req *api.ReviveRequest) (*ap
 	node := s.node
 	node.mu.Lock()
 
-	fmt.Println("got revive request")
-	node.l.Log(node.id, "Revived")
-
 	if node.state == DEAD {
 		node.mu.Unlock()
+		node.l.Log(node.id, "This Node has been Revived")
 
 		node.becomeFollower(0)
 		return &res, nil
 	}
-	
+
 	return nil, fmt.Errorf("Node is not dead, could not revive it")
 }
 
@@ -72,9 +69,9 @@ func (s *apiServer) AddEntry(context context.Context, req *api.AddEntryRequest) 
 	}
 
 	if req.Key == 0 || req.Value == "" {
-		node.l.Log(node.id, "Recieved ping from client")
+		node.l.Log(node.id, "Recieved Ping from Client")
 	} else {
-		node.l.Log(node.id, fmt.Sprintf("Got request %d=%s from client", req.Key, req.Value))
+		node.l.Log(node.id, fmt.Sprintf("Got Request from Client to Add Entry {key: %d, value: %s}", req.Key, req.Value))
 
 		node.dataMu.Lock()
 
@@ -89,7 +86,7 @@ func (s *apiServer) AddEntry(context context.Context, req *api.AddEntryRequest) 
 				return &res, nil
 			} else if returnMsg == FAILIURE {
 				fromLast := 3
-				node.l.Log(node.id, fmt.Sprintf("Node %d reported an appendEntries failiure. Finding nextIndex...", peerId))
+				node.l.Log(node.id, fmt.Sprintf("Node %d Reported a Failiure when Appending Entry. Finding Next Index...", peerId))
 
 				for returnMsg, term = node.sender.appendEntries(peerId, node.term, node.id, int32(len(node.log)-fromLast), node.log[len(node.log)-fromLast].term, node.lastApplied, node.log[len(node.log)-fromLast+1].key, node.log[len(node.log)-fromLast+1].value); returnMsg != SUCCESS; {
 					if returnMsg == AE_TERM_OUT_OF_DATE {
@@ -101,9 +98,9 @@ func (s *apiServer) AddEntry(context context.Context, req *api.AddEntryRequest) 
 					fromLast += 1
 				}
 				fromLast -= 1
-				node.matchIndex[peerId] = int32(len(node.log)-fromLast)
+				node.matchIndex[peerId] = int32(len(node.log) - fromLast)
 
-				node.l.Log(node.id, fmt.Sprintf("Found nextIndex for node %d. Catching up node...s", peerId))
+				node.l.Log(node.id, fmt.Sprintf("Found Next Index for Node %d. Catching Up Entries...", peerId))
 
 				for {
 					returnMsg, term = node.sender.appendEntries(peerId, node.term, node.id, int32(len(node.log)-fromLast), node.log[len(node.log)-fromLast].term, node.lastApplied, node.log[len(node.log)-fromLast+1].key, node.log[len(node.log)-fromLast+1].value)
@@ -120,7 +117,7 @@ func (s *apiServer) AddEntry(context context.Context, req *api.AddEntryRequest) 
 						break
 					}
 				}
-				node.l.Log(node.id, fmt.Sprintf("Node %d caught up", peerId))
+				node.l.Log(node.id, fmt.Sprintf("Node %d Caught Up", peerId))
 
 			} else if returnMsg == SUCCESS {
 				node.matchIndex[peerId] = int32(len(node.log) - 1)
