@@ -1,16 +1,19 @@
 # buoy
 
-A simplified implementation of a consistent, distributed Key:Value store which uses the Raft concensus algorithm. 
+A simple implementation of a consistent, distributed Key:Value store which uses the [Raft Concensus Algorithm](https://raft.github.io/raft.pdf).
 
 This project launches a cluster of raft nodes that run as concurrent state machines.
-A client interface is provided for finding the leader and sending data to the cluster.
+A client interface is also provided for finding the leader and sending data to the cluster.
+Each node is equipped with gRPC clients/servers for communication with the client interface and other nodes.
 
-The cluster and client are tolerant to node failiures and network partitions (a cluster of N can support ⌈N/2⌉ - 1 failures).
+The cluster is tolerant to node failiures and network partitions (a cluster of N can support ⌈N/2⌉ - 1 failures).
 The cluster is smart enough to elect a new leader if needed, and the client is smart enough to find the leader.  
 
-Each node is equipped with gRPC clients/servers for communication with clients and other nodes. 
-
 ## Interesting Events
+
+This project offers a debug flag which creates a `log.html` file that contains a table of cluster events.
+The log used to generate the report below is included as `log-heartbeats-purged.html`. It contains the data for
+all the interesting events below, but 8000+ lines of heartbeat events have been manually removed to keep the file short.
 
 ### 1. Initial Leader Election 
 ![Initial Leader Election](assets/1html.png)
@@ -80,7 +83,7 @@ see that the leader has committed up to its newest entry {key:300}, so they comm
 
 ## Resources
 - A practical [guide](https://eli.thegreenplace.net/2020/implementing-raft-part-0-introduction/) to implementing Raft.  
-- The Raft [paper](https://raft.github.io/raft.pdf)
+- [The Raft paper](https://raft.github.io/raft.pdf)
 
 ## Usage
 
