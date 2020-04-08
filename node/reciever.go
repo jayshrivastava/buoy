@@ -66,7 +66,11 @@ func (receiver *raftReceiver) AppendEntries(ctx context.Context, req *AppendEntr
 	term := node.term
 	node.mu.Unlock()
 
-	node.l.Log(node.id, fmt.Sprintf("Node %d Appending Entry { key %d value %s term %d }", req.LeaderId, req.Key, req.Value, req.Term))
+	if req.Key == 0 {
+		node.l.Log(node.id, fmt.Sprintf("Node %d Heartbeat { key %d value %s term %d }", req.LeaderId, req.Key, req.Value, req.Term))
+	} else {
+		node.l.Log(node.id, fmt.Sprintf("Node %d Rec. Append Entries Request { key %d value %s term %d }", req.LeaderId, req.Key, req.Value, req.Term))
+	}
 
 	res := AppendEntriesResponse{}
 

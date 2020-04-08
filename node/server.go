@@ -86,7 +86,7 @@ func (s *apiServer) AddEntry(context context.Context, req *api.AddEntryRequest) 
 				return &res, nil
 			} else if returnMsg == FAILIURE {
 				fromLast := 3
-				node.l.Log(node.id, fmt.Sprintf("Node %d Reported a Failiure when Appending Entry. Finding Next Index...", peerId))
+				node.l.Log(node.id, fmt.Sprintf("Node %d Reported a Failiure when Appending Entry. Catching Up Entries...", peerId))
 
 				for returnMsg, term = node.sender.appendEntries(peerId, node.term, node.id, int32(len(node.log)-fromLast), node.log[len(node.log)-fromLast].term, node.lastApplied, node.log[len(node.log)-fromLast+1].key, node.log[len(node.log)-fromLast+1].value); returnMsg != SUCCESS; {
 					if returnMsg == AE_TERM_OUT_OF_DATE {
@@ -99,8 +99,6 @@ func (s *apiServer) AddEntry(context context.Context, req *api.AddEntryRequest) 
 				}
 				fromLast -= 1
 				node.matchIndex[peerId] = int32(len(node.log) - fromLast)
-
-				node.l.Log(node.id, fmt.Sprintf("Found Next Index for Node %d. Catching Up Entries...", peerId))
 
 				for {
 					returnMsg, term = node.sender.appendEntries(peerId, node.term, node.id, int32(len(node.log)-fromLast), node.log[len(node.log)-fromLast].term, node.lastApplied, node.log[len(node.log)-fromLast+1].key, node.log[len(node.log)-fromLast+1].value)

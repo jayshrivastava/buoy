@@ -32,7 +32,7 @@ each follower node resets its election timer upon receiving these heartbeats.
 ### 3. Updating Data in the Cluster
 ![Header](assets/headerhtml.png)
 ![Updating Data in the Cluster 0](assets/3.0html.png)
-Node 1, the leader, receives data {key: 100, value: "Some Value"} from the client.
+Node 1, the leader, receives data `{key: 100, value: "Some Value"}` from the client.
 It tells nodes 1 and 2 to append that change to their logs. Because both succeed, node 0 knows the entry is
 successfully duplicated on the majority of servers, so it commits the log entry. 
 
@@ -47,7 +47,7 @@ nodes 0 and 2 commit their log entries locally.
 Node 0 dies and does not recieve heartbeats from node 1. 
 
 ![Follower Node Failure 1](assets/4.1html.png)
-Node 1 gets a request to add a value {key: 200}. Although, it cannot send it to node 0, it successfully
+Node 1 gets a request to add a value `{key: 200}`. Although it cannot send it to node 0, it successfully
 sends the entry to node 2. It commits it knowing that is
 duplicated on the majority of nodes. 
 
@@ -55,9 +55,9 @@ duplicated on the majority of nodes.
 Node 0 comes back to life and starts receiving heartbeats again.
 
 ![Follower Node Failure 3](assets/4.3html.png)
-Node 1 gets a request to add another value {key: 300}. When sending it to node 0, it sees that node 0
-missed the previous value {key: 200} while it was dead. Node 1 catches up node 0 by giving it log entries
-to append. On the following heartbeat, all the nodes see that the leader has committed up to commit up to {key: 300}, so they commit any missed log entries up to and including the entry with {key: 300}.
+Node 1 gets a request to add another value `{key: 300}`. When sending it to node 0, it sees that node 0
+missed the previous value `{key: 200}` while it was dead. Node 1 catches up node 0 by giving it log entries
+to append. On the following heartbeat, all the nodes see that the leader has committed up to commit up to `{key: 300}`, so they commit any missed log entries up to and including the entry with `{key: 300}`.
 
 ### 5. Leader Node Failure and Re-Election
 ![Header](assets/headerhtml.png)
@@ -67,18 +67,18 @@ Most likely, this is because node 0 started an election at roughly the same time
 Node starts and election and succeeds, getting a vote from node 2 and itself.
 
 ![Leader Node Failure and Re-Election 1](assets/5.1html.png)
-As the new leader, node 0 gets a new entry, modifying {key:200}. As the leader, it duplicates the entry onto node 2 and
+As the new leader, node 0 gets a new entry, modifying `{key:200}`. As the leader, it duplicates the entry onto node 2 and
 commits it. Node 2 commits it after the following heartbeat.
 
 ![Leader Node Failure and Re-Election 2](assets/5.2html.png)
 Node 1 comes back online and starts getting heartbeats again.
 
 ![Leader Node Failure and Re-Election 3](assets/5.3html.png)
-Node 0 gets the request to add an entry to modify {key:300}. When sending it to node 1, it sees that node 1 is out of
-date, so it catches up node 1. Node 1 appends the entry it missed {key:200} and the new entry {key:300} to
+Node 0 gets the request to add an entry to modify `{key:300}`. When sending it to node 1, it sees that node 1 is out of
+date, so it catches up node 1. Node 1 appends the entry it missed `{key:200}` and the new entry `{key:300}` to
 its log. Node 2 appends the new entry to its log. Node 0 commits its newest entry, knowing that it was
 duplicated on the majority of servers (all of them in this case). During the next heartbeat, nodes 1 and 2
-see that the leader has committed up to its newest entry {key:300}, so they commit all uncommitted entries up to that. 
+see that the leader has committed up to its newest entry `{key:300}`, so they commit all uncommitted entries up to that. 
 
 
 ## Resources
